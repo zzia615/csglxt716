@@ -76,7 +76,14 @@ public class SqlServerHelper
         //初始化数据库
         //InitDb();
         //初始化数据库链接字符串，从web.config里面获取节点【ksbmglxtConStr】的链接字符串
-        conStr = ConfigurationManager.ConnectionStrings["conStr"].ConnectionString;
+        try
+        {
+            conStr = ConfigurationManager.ConnectionStrings["conStr"].ConnectionString;
+        }
+        catch 
+        {
+            conStr = "";
+        }
     }
 
     
@@ -223,12 +230,24 @@ public class SqlServerHelper
             return table;
         }
     }
-
+    /// <summary>
+    /// 根据SQL语句查询数据
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="sql"></param>
+    /// <returns></returns>
     public List<T> Query<T>(string sql) where T : new()
     {
         return Query<T>(sql, null);
 
     }
+    /// <summary>
+    /// 根据SQL语句查询数据
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
     public List<T> Query<T>(string sql,SqlParameter[] parameters) where T:new()
     {
         DataTable table = QuerySqlDataTable(sql, parameters);
@@ -274,34 +293,215 @@ public class SqlServerHelper
 
         return dataList;
     }
+    /// <summary>
+    /// 新增
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    public int Add<T>(T t) where T : new()
+    {
+        var ps = t.GetType().GetProperties();
 
-    //public int Add<T>(T t)where T:new()
-    //{
-    //    var ps = t.GetType().GetProperties();
-    //    foreach(PropertyInfo p in ps)
-    //    {
-    //        object[] attrs = p.GetCustomAttributes(true);
+        string tableName = t.GetType().Name;
+        foreach (var attr in t.GetType().GetCustomAttributes(false))
+        {
+            if (attr is tableAttribute)
+            {
+                var table = attr as tableAttribute;
+                tableName = string.IsNullOrEmpty(table.TableName) ? t.GetType().Name : table.TableName;
+            }
+        }
 
-    //        string colName = string.Empty;
-    //        foreach (var attr in attrs)
-    //        {
-    //            if(attr is columnAttribute)
-    //            {
-    //                var col = attr as columnAttribute;
-    //                string colName = string.IsNullOrEmpty(col.ColName) ?p.Name: col.ColName;
+        StringBuilder sSQL = new StringBuilder();
+        StringBuilder sCOL = new StringBuilder();
+        StringBuilder sVAL = new StringBuilder();
+        sSQL.AppendFormat("INSERT INTO {0}(", tableName);
+        List<SqlParameter> parameters = new List<SqlParameter>();
+        foreach (PropertyInfo p in ps)
+        {
+            object[] attrs = p.GetCustomAttributes(true);
+            string colName = p.Name;
+            object colValue = p.GetValue(t,null);
+            foreach (var attr in attrs)
+            {
+                if (attr is columnAttribute)
+                {
+                    var col = attr as columnAttribute;
+                    colName = string.IsNullOrEmpty(col.ColName) ? p.Name : col.ColName;
+                }
+            }
+            if (sCOL.Length > 0)
+            {
+                sCOL.Append(",");
+            }
+            sCOL.Append(colName);
+            if (sVAL.Length > 0)
+            {
+                sVAL.Append(",");
+            }
+            sVAL.AppendFormat("@{0}",colName);
 
-    //            }
-    //        }
-    //    }
-    //}
-    //public int Edit<T>(T t) where T : new()
-    //{
 
-    //}
-    //public int Delete<T>(T t) where T : new()
-    //{
+            SqlParameter parameter = new SqlParameter("@" + colName, colValue);
+            parameters.Add(parameter);
+        }
 
-    //}
+        sSQL.Append(sCOL);
+        sSQL.Append(")VALUES(");
+        sSQL.Append(sVAL);
+        sSQL.Append(")");
+
+        return ExecuteSql(sSQL.ToString(), parameters.ToArray());
+
+    }
+    /// <summary>
+    /// 修改
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    public int Edit<T>(T t) where T : new()
+    {
+        var ps = t.GetType().GetProperties();
+
+        string tableName = t.GetType().Name;
+        foreach (var attr in t.GetType().GetCustomAttributes(false))
+        {
+            if (attr is tableAttribute)
+            {
+                var table = attr as tableAttribute;
+                tableName = string.IsNullOrEmpty(table.TableName) ? t.GetType().Name : table.TableName;
+            }
+        }
+
+        StringBuilder sSQL = new StringBuilder();
+        StringBuilder sCOL = new StringBuilder();
+        StringBuilder sWHR = new StringBuilder();
+        sSQL.AppendFormat("UPDATE {0} SET ", tableName);
+        List<SqlParameter> parameters = new List<SqlParameter>();
+        foreach (PropertyInfo p in ps)
+        {
+            bool isKey = false;
+            object[] attrs = p.GetCustomAttributes(true);
+            string colName = p.Name;
+            object colValue = p.GetValue(t, null);
+            foreach (var attr in attrs)
+            {
+                if (attr is columnAttribute)
+                {
+                    var col = attr as columnAttribute;
+                    colName = string.IsNullOrEmpty(col.ColName) ? p.Name : col.ColName;
+                    isKey = col.PrimaryKey;
+                }
+            }
+
+
+            if (isKey)
+            {
+                if (sWHR.Length > 0)
+                {
+                    sWHR.Append(" AND ");
+                }
+                else
+                {
+                    sWHR.Append(" WHERE ");
+                }
+                sWHR.AppendFormat("{0}=@{0}", colName);
+            }
+            else
+            {
+                if (sCOL.Length > 0)
+                {
+                    sCOL.Append(",");
+                }
+                sCOL.AppendFormat("{0}=@{0}", colName);
+            }
+
+
+            SqlParameter parameter = new SqlParameter("@" + colName, colValue);
+            parameters.Add(parameter);
+        }
+
+        if (sWHR.Length <= 0)
+        {
+            throw new Exception("对象[" + t.GetType().Name + "]不存在主键");
+        }
+
+        sSQL.Append(sCOL);
+        sSQL.Append(sWHR);
+
+        return ExecuteSql(sSQL.ToString(), parameters.ToArray());
+    }
+    /// <summary>
+    /// 删除
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    public int Delete<T>(T t) where T : new()
+    {
+        var ps = t.GetType().GetProperties();
+
+        string tableName = t.GetType().Name;
+        foreach (var attr in t.GetType().GetCustomAttributes(false))
+        {
+            if (attr is tableAttribute)
+            {
+                var table = attr as tableAttribute;
+                tableName = string.IsNullOrEmpty(table.TableName) ? t.GetType().Name : table.TableName;
+            }
+        }
+
+        StringBuilder sSQL = new StringBuilder();
+        StringBuilder sWHR = new StringBuilder();
+        sSQL.AppendFormat("DELETE FROM {0} ", tableName);
+        List<SqlParameter> parameters = new List<SqlParameter>();
+        foreach (PropertyInfo p in ps)
+        {
+            bool isKey = false;
+            object[] attrs = p.GetCustomAttributes(true);
+            string colName = p.Name;
+            object colValue = p.GetValue(t, null);
+            foreach (var attr in attrs)
+            {
+                if (attr is columnAttribute)
+                {
+                    var col = attr as columnAttribute;
+                    colName = string.IsNullOrEmpty(col.ColName) ? p.Name : col.ColName;
+                    isKey = col.PrimaryKey;
+                }
+            }
+
+
+            if (isKey)
+            {
+                if (sWHR.Length > 0)
+                {
+                    sWHR.Append(" AND ");
+                }
+                else
+                {
+                    sWHR.Append(" WHERE ");
+                }
+                sWHR.AppendFormat("{0}=@{0}", colName);
+            }
+            else
+            {
+                continue;
+            }
+
+            SqlParameter parameter = new SqlParameter("@" + colName, colValue);
+            parameters.Add(parameter);
+        }
+        if (sWHR.Length <= 0)
+        {
+            throw new Exception("对象["+t.GetType().Name+"]不存在主键");
+        }
+        sSQL.Append(sWHR);
+
+        return ExecuteSql(sSQL.ToString(), parameters.ToArray());
+    }
 }
 /// <summary>
 /// SqlServerHelper扩展对象
@@ -327,5 +527,241 @@ public static class SqlServerHelperExt
         cmd.Transaction = trans;
         //执行Sql语句
         return cmd.ExecuteNonQuery();
+    }
+    /// <summary>
+    /// 包含事务对象执行Sql语句
+    /// </summary>
+    /// <param name="con"></param>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <param name="trans"></param>
+    /// <returns></returns>
+    public static int ExecuteSql(this System.Data.SqlClient.SqlConnection con, string sql, SqlParameter[] parameters,System.Data.SqlClient.SqlTransaction trans)
+    {
+
+        //创建SqlCommand对象
+        var cmd = con.CreateCommand();
+        //设置执行的Sql语句（语句限定insert update delete）
+        cmd.CommandText = sql;
+        cmd.CommandType = System.Data.CommandType.Text;
+        //设置事务
+        cmd.Transaction = trans;
+        cmd.Parameters.AddRange(parameters);
+        //执行Sql语句
+        return cmd.ExecuteNonQuery();
+    }
+    /// <summary>
+    /// 新增
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="con"></param>
+    /// <param name="t"></param>
+    /// <param name="trans"></param>
+    /// <returns></returns>
+    public static int Add<T>(this System.Data.SqlClient.SqlConnection con, T t, System.Data.SqlClient.SqlTransaction trans)
+    {
+        var ps = t.GetType().GetProperties();
+
+        string tableName = t.GetType().Name;
+        foreach (var attr in t.GetType().GetCustomAttributes(false))
+        {
+            if (attr is tableAttribute)
+            {
+                var table = attr as tableAttribute;
+                tableName = string.IsNullOrEmpty(table.TableName) ? t.GetType().Name : table.TableName;
+            }
+        }
+
+        StringBuilder sSQL = new StringBuilder();
+        StringBuilder sCOL = new StringBuilder();
+        StringBuilder sVAL = new StringBuilder();
+        sSQL.AppendFormat("INSERT INTO {0}(", tableName);
+        List<SqlParameter> parameters = new List<SqlParameter>();
+        foreach (PropertyInfo p in ps)
+        {
+            object[] attrs = p.GetCustomAttributes(true);
+            string colName = p.Name;
+            object colValue = p.GetValue(t, null);
+            foreach (var attr in attrs)
+            {
+                if (attr is columnAttribute)
+                {
+                    var col = attr as columnAttribute;
+                    colName = string.IsNullOrEmpty(col.ColName) ? p.Name : col.ColName;
+                }
+            }
+            if (sCOL.Length > 0)
+            {
+                sCOL.Append(",");
+            }
+            sCOL.Append(colName);
+            if (sVAL.Length > 0)
+            {
+                sVAL.Append(",");
+            }
+            sVAL.AppendFormat("@{0}", colName);
+
+
+            SqlParameter parameter = new SqlParameter("@" + colName, colValue);
+            parameters.Add(parameter);
+        }
+
+        sSQL.Append(sCOL);
+        sSQL.Append(")VALUES(");
+        sSQL.Append(sVAL);
+        sSQL.Append(")");
+
+        return con.ExecuteSql(sSQL.ToString(), parameters.ToArray(), trans);
+    }
+    /// <summary>
+    /// 修改
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="con"></param>
+    /// <param name="t"></param>
+    /// <param name="trans"></param>
+    /// <returns></returns>
+    public static int Edit<T>(this System.Data.SqlClient.SqlConnection con, T t, System.Data.SqlClient.SqlTransaction trans)
+    {
+        var ps = t.GetType().GetProperties();
+
+        string tableName = t.GetType().Name;
+        foreach (var attr in t.GetType().GetCustomAttributes(false))
+        {
+            if (attr is tableAttribute)
+            {
+                var table = attr as tableAttribute;
+                tableName = string.IsNullOrEmpty(table.TableName) ? t.GetType().Name : table.TableName;
+            }
+        }
+
+        StringBuilder sSQL = new StringBuilder();
+        StringBuilder sCOL = new StringBuilder();
+        StringBuilder sWHR = new StringBuilder();
+        sSQL.AppendFormat("UPDATE {0} SET ", tableName);
+        List<SqlParameter> parameters = new List<SqlParameter>();
+        foreach (PropertyInfo p in ps)
+        {
+            bool isKey = false;
+            object[] attrs = p.GetCustomAttributes(true);
+            string colName = p.Name;
+            object colValue = p.GetValue(t, null);
+            foreach (var attr in attrs)
+            {
+                if (attr is columnAttribute)
+                {
+                    var col = attr as columnAttribute;
+                    colName = string.IsNullOrEmpty(col.ColName) ? p.Name : col.ColName;
+                    isKey = col.PrimaryKey;
+                }
+            }
+
+
+            if (isKey)
+            {
+                if (sWHR.Length > 0)
+                {
+                    sWHR.Append(" AND ");
+                }
+                else
+                {
+                    sWHR.Append(" WHERE ");
+                }
+                sWHR.AppendFormat("{0}=@{0}", colName);
+            }
+            else
+            {
+                if (sCOL.Length > 0)
+                {
+                    sCOL.Append(",");
+                }
+                sCOL.AppendFormat("{0}=@{0}", colName);
+            }
+
+
+            SqlParameter parameter = new SqlParameter("@" + colName, colValue);
+            parameters.Add(parameter);
+        }
+
+        if (sWHR.Length <= 0)
+        {
+            throw new Exception("对象[" + t.GetType().Name + "]不存在主键");
+        }
+
+        sSQL.Append(sCOL);
+        sSQL.Append(sWHR);
+
+        return con.ExecuteSql(sSQL.ToString(), parameters.ToArray(), trans);
+    }
+    /// <summary>
+    /// 删除
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="con"></param>
+    /// <param name="t"></param>
+    /// <param name="trans"></param>
+    /// <returns></returns>
+    public static int Delete<T>(this System.Data.SqlClient.SqlConnection con, T t, System.Data.SqlClient.SqlTransaction trans)
+    {
+        var ps = t.GetType().GetProperties();
+
+        string tableName = t.GetType().Name;
+        foreach (var attr in t.GetType().GetCustomAttributes(false))
+        {
+            if (attr is tableAttribute)
+            {
+                var table = attr as tableAttribute;
+                tableName = string.IsNullOrEmpty(table.TableName) ? t.GetType().Name : table.TableName;
+            }
+        }
+
+        StringBuilder sSQL = new StringBuilder();
+        StringBuilder sWHR = new StringBuilder();
+        sSQL.AppendFormat("DELETE FROM {0} ", tableName);
+        List<SqlParameter> parameters = new List<SqlParameter>();
+        foreach (PropertyInfo p in ps)
+        {
+            bool isKey = false;
+            object[] attrs = p.GetCustomAttributes(true);
+            string colName = p.Name;
+            object colValue = p.GetValue(t, null);
+            foreach (var attr in attrs)
+            {
+                if (attr is columnAttribute)
+                {
+                    var col = attr as columnAttribute;
+                    colName = string.IsNullOrEmpty(col.ColName) ? p.Name : col.ColName;
+                    isKey = col.PrimaryKey;
+                }
+            }
+
+
+            if (isKey)
+            {
+                if (sWHR.Length > 0)
+                {
+                    sWHR.Append(" AND ");
+                }
+                else
+                {
+                    sWHR.Append(" WHERE ");
+                }
+                sWHR.AppendFormat("{0}=@{0}", colName);
+            }
+            else
+            {
+                continue;
+            }
+
+            SqlParameter parameter = new SqlParameter("@" + colName, colValue);
+            parameters.Add(parameter);
+        }
+        if (sWHR.Length <= 0)
+        {
+            throw new Exception("对象[" + t.GetType().Name + "]不存在主键");
+        }
+        sSQL.Append(sWHR);
+
+        return con.ExecuteSql(sSQL.ToString(), parameters.ToArray(), trans);
     }
 }

@@ -13,6 +13,7 @@ namespace csglxt716.Model
         /// <summary>
         /// 账号
         /// </summary>
+        [column(PrimaryKey = true)]
         public string code { get; set; }
         /// <summary>
         /// 姓名

@@ -8,23 +8,21 @@ namespace csglxt716
 {
     public class columnAttribute: Attribute
     {
-        public columnAttribute(string colName,bool primaryKey)
+        public columnAttribute()
         {
-            ColName = colName;
-            PrimaryKey = primaryKey;
+           
         }
 
-        public string ColName { get; }
-        public bool PrimaryKey { get; }
+        public string ColName { get; set; }
+        public bool PrimaryKey { get; set; }
     }
 
     public class tableAttribute : Attribute
     {
-        public tableAttribute(string tableName)
+        public tableAttribute()
         {
-            TableName = tableName;
         }
 
-        public string TableName { get; }
+        public string TableName { get; set; }
     }
 }
