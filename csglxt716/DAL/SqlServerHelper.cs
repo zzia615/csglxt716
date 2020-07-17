@@ -1,9 +1,11 @@
-﻿using System;
+﻿using csglxt716;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 public class SqlServerHelper
@@ -222,6 +224,84 @@ public class SqlServerHelper
         }
     }
 
+    public List<T> Query<T>(string sql) where T : new()
+    {
+        return Query<T>(sql, null);
+
+    }
+    public List<T> Query<T>(string sql,SqlParameter[] parameters) where T:new()
+    {
+        DataTable table = QuerySqlDataTable(sql, parameters);
+        List<T> dataList = new List<T>();
+        foreach (DataRow row in table.Rows)
+        {
+            T obj = new T();
+            var ps = typeof(T).GetProperties();
+            foreach (PropertyInfo p in ps)
+            {
+                if (p.GetType() == typeof(Int32)
+                    || p.GetType() == typeof(UInt32)
+                    || p.GetType() == typeof(Int16)
+                    || p.GetType() == typeof(UInt16))
+                {
+                    p.SetValue(obj, row[p.Name].AsInt(), null);
+                }
+                else if (p.GetType() == typeof(decimal)
+                    || p.GetType() == typeof(float)
+                    || p.GetType() == typeof(double))
+                {
+                    p.SetValue(obj, row[p.Name].AsDecimal(), null);
+                }
+                else if (p.GetType() == typeof(DateTime))
+                {
+                    p.SetValue(obj, row[p.Name].AsDatetime(), null);
+                }
+                else if (p.GetType() == typeof(bool))
+                {
+                    p.SetValue(obj, row[p.Name].AsBoolean(), null);
+                }
+                else if (p.GetType() == typeof(string))
+                {
+                    p.SetValue(obj, row[p.Name].AsString(), null);
+                }
+                else
+                {
+                    p.SetValue(obj, row[p.Name], null);
+                }
+            }
+            dataList.Add(obj);
+        }
+
+        return dataList;
+    }
+
+    //public int Add<T>(T t)where T:new()
+    //{
+    //    var ps = t.GetType().GetProperties();
+    //    foreach(PropertyInfo p in ps)
+    //    {
+    //        object[] attrs = p.GetCustomAttributes(true);
+
+    //        string colName = string.Empty;
+    //        foreach (var attr in attrs)
+    //        {
+    //            if(attr is columnAttribute)
+    //            {
+    //                var col = attr as columnAttribute;
+    //                string colName = string.IsNullOrEmpty(col.ColName) ?p.Name: col.ColName;
+
+    //            }
+    //        }
+    //    }
+    //}
+    //public int Edit<T>(T t) where T : new()
+    //{
+
+    //}
+    //public int Delete<T>(T t) where T : new()
+    //{
+
+    //}
 }
 /// <summary>
 /// SqlServerHelper扩展对象

@@ -39,6 +39,13 @@ public static class Ext
         DateTime.TryParse(d, out dd);
         return dd;
     }
+    public static bool AsBoolean(this object obj)
+    {
+        string d = obj.AsString();
+        bool dd;
+        bool.TryParse(d, out dd);
+        return dd;
+    }
     public static string AsFormat(this string str,params object[] obj)
     {
         return string.Format(str, obj);

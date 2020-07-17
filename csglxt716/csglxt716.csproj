@@ -69,7 +69,9 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attr.cs" />
     <Compile Include="DAL\SqlServerHelper.cs" />
+    <Compile Include="DAL\UserDAL.cs" />
     <Compile Include="Ext.cs" />
     <Compile Include="GlobalVar.cs" />
     <Compile Include="Model\CatagoryInfo.cs" />
