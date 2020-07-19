@@ -1,4 +1,5 @@
-﻿using System;
+﻿using csglxt716.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,5 +7,5 @@ using System.Text;
 
 public class GlobalVar
 {
-    //public static User LoginUser { get; set; }
+    public static UserInfo LoginUser { get; set; }
 }
