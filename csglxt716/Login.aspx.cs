@@ -16,9 +16,16 @@ namespace csglxt716
 
         protected void b_login_Click(object sender, EventArgs e)
         {
-            string msg;
-            new BLL.UserBLL().LoginSys(t_code.Text, t_pwd.Text, out msg);
-            Response.Write(GlobalFunc.GetAlert(msg));
+            try
+            {
+                string msg;
+                new BLL.UserBLL().LoginSys(t_code.Text, t_pwd.Text, out msg);
+                Response.Write(GlobalFunc.GetAlert(msg));
+            }
+            catch (Exception ex)
+            {
+                Response.Write(GlobalFunc.GetAlert(ex.Message));
+            }
         }
     }
 }
