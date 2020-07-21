@@ -64,7 +64,12 @@ namespace csglxt716.BLL
 
             return true;
         }
-
+        /// <summary>
+        /// 查询用户信息
+        /// </summary>
+        /// <param name="code">账号</param>
+        /// <param name="name">姓名</param>
+        /// <returns></returns>
         public List<UserInfo> GetUserInfo(string code,string name)
         {
             return new DAL.UserDAL().GetUserInfo(code, name);

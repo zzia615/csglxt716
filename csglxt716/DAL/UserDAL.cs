@@ -10,23 +10,47 @@ namespace csglxt716.DAL
 {
     public class UserDAL
     {
-        public List<UserInfo> GetUserInfo(string code, string name)
+        public List<UserInfo> GetUserInfo(string code, string name,int pageIndex=1,int pageSize=10)
         {
-            StringBuilder sSQL = new StringBuilder("select * from UserInfo where 1=1");
+            StringBuilder sWHERE = new StringBuilder();
+
             List<SqlParameter> parameters = new List<SqlParameter>();
             if (!string.IsNullOrEmpty(code))
             {
-                sSQL.Append(" AND code=@code");
+                sWHERE.Append(" AND code=@code");
                 parameters.Add(new SqlParameter("@code", code));
             }
             if (!string.IsNullOrEmpty(name))
             {
-                sSQL.Append(" AND name=@name");
+                sWHERE.Append(" AND name=@name");
                 parameters.Add(new SqlParameter("@name", name));
             }
-            return new SqlServerHelper().Query<UserInfo>(sSQL.ToString());
-        }
 
+            StringBuilder sSQL = new StringBuilder(SqlServerHelper.GetPageSql("UserInfo", new[] { "code" }, pageIndex, pageSize, sWHERE.ToString()));
+
+            return new SqlServerHelper().Query<UserInfo>(sSQL.ToString(), parameters);
+        }
+        public int GetUserCount(string code, string name)
+        {
+            StringBuilder sWHERE = new StringBuilder();
+
+            List<SqlParameter> parameters = new List<SqlParameter>();
+            if (!string.IsNullOrEmpty(code))
+            {
+                sWHERE.Append(" AND code=@code");
+                parameters.Add(new SqlParameter("@code", code));
+            }
+            if (!string.IsNullOrEmpty(name))
+            {
+                sWHERE.Append(" AND name=@name");
+                parameters.Add(new SqlParameter("@name", name));
+            }
+
+            StringBuilder sSQL = new StringBuilder("select * from UserInfo where 1=1 ");
+            sSQL.Append(sWHERE);
+
+            return new SqlServerHelper().QuerySqlCount(sSQL.ToString(), parameters);
+        }
         public UserInfo GetSingleUser(string code)
         {
             return GetUserInfo(code, string.Empty).FirstOrDefault();

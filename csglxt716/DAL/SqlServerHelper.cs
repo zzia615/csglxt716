@@ -126,28 +126,12 @@ public class SqlServerHelper
     /// <returns></returns>
     public int ExecuteSql(string sql)
     {
-        //实例化SqlConnection对象
-        using (var con = CreateCon())
-        {
-            //打开数据库
-            con.Open();
-            try
-            {
-                //创建SqlCommand对象
-                var cmd = con.CreateCommand();
-                //设置执行的Sql语句（语句限定insert update delete）
-                cmd.CommandText = sql;
-                cmd.CommandType = System.Data.CommandType.Text;
-                //执行Sql语句
-                return cmd.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        return ExecuteSql(sql, null);
     }
-
+    public int ExecuteSql(string sql, IEnumerable< SqlParameter> parameters)
+    {
+        return ExecuteSql(sql, parameters.ToArray());
+    }
     public int ExecuteSql(string sql,SqlParameter[] parameters)
     {
         //实例化SqlConnection对象
@@ -162,7 +146,8 @@ public class SqlServerHelper
                 //设置执行的Sql语句（语句限定insert update delete）
                 cmd.CommandText = sql;
                 cmd.CommandType = System.Data.CommandType.Text;
-                cmd.Parameters.AddRange(parameters);
+                if (parameters != null)
+                    cmd.Parameters.AddRange(parameters);
                 //执行Sql语句
                 return cmd.ExecuteNonQuery();
             }
@@ -179,12 +164,47 @@ public class SqlServerHelper
     /// <returns></returns>
     public int QuerySqlCount(string sql)
     {
-        DataTable table = QuerySqlDataTable(sql);
-        if (table != null)
+        return QuerySqlCount(sql, null);
+    }
+    /// <summary>
+    /// 查询sql数据的个数
+    /// </summary>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    public int QuerySqlCount(string sql, IEnumerable< SqlParameter> parameters)
+    {
+        return QuerySqlCount(sql, parameters.ToArray());
+    }
+    /// <summary>
+    /// 查询sql数据的个数
+    /// </summary>
+    /// <param name="sql"></param>
+    /// <returns></returns>
+    public int QuerySqlCount(string sql, SqlParameter[] parameters)
+    {
+        //实例化SqlConnection对象
+        using (var con = CreateCon())
         {
-            return table.Rows.Count;
+            //打开数据库
+            con.Open();
+            try
+            {
+                //创建SqlCommand对象
+                var cmd = con.CreateCommand();
+                //设置执行的Sql语句（语句限定insert update delete）
+                cmd.CommandText = sql;
+                cmd.CommandType = System.Data.CommandType.Text;
+                if(parameters!=null)
+                    cmd.Parameters.AddRange(parameters);
+                //执行Sql语句
+                return cmd.ExecuteScalar().AsInt();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
-        return 0;
     }
 
     /// <summary>
@@ -208,7 +228,10 @@ public class SqlServerHelper
             return table;
         }
     }
-
+    public DataTable QuerySqlDataTable(string sql, IEnumerable<SqlParameter> parameters)
+    {
+        return QuerySqlDataTable(sql, parameters.ToArray());
+    }
 
     public DataTable QuerySqlDataTable(string sql,SqlParameter[] parameters)
     {
@@ -219,7 +242,8 @@ public class SqlServerHelper
             con.Open();
             var cmd = con.CreateCommand();
             cmd.CommandText = sql;
-            cmd.Parameters.AddRange(parameters);
+            if (parameters != null)
+                cmd.Parameters.AddRange(parameters);
             //创建数据集
             DataTable table = new DataTable();
             //创建数据库适配器对象，并设置查询语句的Sql
@@ -240,6 +264,10 @@ public class SqlServerHelper
     {
         return Query<T>(sql, null);
 
+    }
+    public List<T> Query<T>(string sql, IEnumerable< SqlParameter> parameters) where T : new()
+    {
+        return Query<T>(sql, parameters.ToArray());
     }
     /// <summary>
     /// 根据SQL语句查询数据
@@ -502,6 +530,30 @@ public class SqlServerHelper
 
         return ExecuteSql(sSQL.ToString(), parameters.ToArray());
     }
+
+    public static string GetPageSql(string table,string[] keys,int pageIndex,int pageSize,string whereClause="")
+    {
+        StringBuilder sPK = new StringBuilder();
+
+        foreach(var key in keys)
+        {
+            if (sPK.Length > 0)
+            {
+                sPK.Append(",");
+            }
+            sPK.Append(key + " asc");
+        }
+
+
+        string sSQL = @"select top {0} * 
+                    from (select row_number() 
+                    over(order by {3}) as rownumber,* 
+                    from {2} where 1=1 {4}) temp_row
+                    where rownumber>(({1}-1)*pageSize);";
+        sSQL = string.Format(sSQL, pageSize, pageIndex, table, sPK, whereClause);
+
+        return sSQL;
+    }
 }
 /// <summary>
 /// SqlServerHelper扩展对象
@@ -528,6 +580,12 @@ public static class SqlServerHelperExt
         //执行Sql语句
         return cmd.ExecuteNonQuery();
     }
+
+    public static int ExecuteSql(this System.Data.SqlClient.SqlConnection con, string sql, IEnumerable< SqlParameter> parameters, System.Data.SqlClient.SqlTransaction trans)
+    {
+        return ExecuteSql(con, sql, parameters.ToArray(), trans);
+    }
+
     /// <summary>
     /// 包含事务对象执行Sql语句
     /// </summary>
@@ -546,7 +604,8 @@ public static class SqlServerHelperExt
         cmd.CommandType = System.Data.CommandType.Text;
         //设置事务
         cmd.Transaction = trans;
-        cmd.Parameters.AddRange(parameters);
+        if (parameters != null)
+            cmd.Parameters.AddRange(parameters);
         //执行Sql语句
         return cmd.ExecuteNonQuery();
     }

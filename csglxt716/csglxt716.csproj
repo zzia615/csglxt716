@@ -66,6 +66,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Login.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -74,7 +75,15 @@
     <Compile Include="DAL\SqlServerHelper.cs" />
     <Compile Include="DAL\UserDAL.cs" />
     <Compile Include="Ext.cs" />
+    <Compile Include="GlobalFunc.cs" />
     <Compile Include="GlobalVar.cs" />
+    <Compile Include="Login.aspx.cs">
+      <DependentUpon>Login.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Login.aspx.designer.cs">
+      <DependentUpon>Login.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Model\CatagoryInfo.cs" />
     <Compile Include="Model\ProductInfo.cs" />
     <Compile Include="Model\StockInfo.cs" />
