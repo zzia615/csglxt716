@@ -1,0 +1,84 @@
+﻿body {
+    font:"仿宋";
+}
+/*按钮*/
+.btn{
+    outline-style:none;
+    border:none;
+    height:40px;
+    width:100px;
+    font-size:1.2em;
+}
+
+.btn-danger{
+    color:#fff;
+    background:#ff0000;
+}
+    .btn-danger:hover {
+        background: #f33636;
+    }
+    .btn-danger:focus {
+        background: #c91010;
+    }
+.btn-primary {
+    color: #fff;
+    background: #2b2a26;
+}
+    .btn-primary:hover {
+        background: #4b4a47;
+    }
+
+    .btn-primary:focus {
+        background: #0b0b0a;
+    }
+
+.btn-info {
+    color: #fff;
+    background: #166d21;
+}
+    .btn-info:hover {
+        background: #33843d;
+    }
+
+    .btn-info:focus {
+        background: #135d1c;
+    }
+
+.btn-warn{
+    color:#fff;
+    background:#aca915;
+}
+
+    .btn-warn:hover {
+        background: #c4c133;
+    }
+
+    .btn-warn:focus {
+        background: #939011;
+    }
+
+.btn-success {
+    color: #fff;
+    background: #2c5fc8;
+}
+    .btn-success:hover{
+        background: #3a67c5;
+    }
+    .btn-success:focus {
+        background: #214184;
+    }
+/*文本框*/
+.input {
+    height: 30px;
+    outline-style:none;
+    border-width: 1px;
+    border-color: #2c5fc8;
+    padding:2px;
+    font-size:12pt;
+}
+
+    .input:focus, .input:hover,.input:active {
+        border-width: 1px;
+        border-color: #0c3485;
+    }
+    

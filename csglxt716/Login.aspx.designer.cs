@@ -7,13 +7,11 @@
 // </自动生成>
 //------------------------------------------------------------------------------
 
-namespace csglxt716
-{
-
-
-    public partial class Login
-    {
-
+namespace csglxt716 {
+    
+    
+    public partial class Login {
+        
         /// <summary>
         /// form1 控件。
         /// </summary>
@@ -22,7 +20,7 @@ namespace csglxt716
         /// 若要进行修改，请将字段声明从设计器文件移到代码隐藏文件。
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlForm form1;
-
+        
         /// <summary>
         /// t_code 控件。
         /// </summary>
@@ -31,7 +29,7 @@ namespace csglxt716
         /// 若要进行修改，请将字段声明从设计器文件移到代码隐藏文件。
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox t_code;
-
+        
         /// <summary>
         /// t_pwd 控件。
         /// </summary>
@@ -40,7 +38,16 @@ namespace csglxt716
         /// 若要进行修改，请将字段声明从设计器文件移到代码隐藏文件。
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox t_pwd;
-
+        
+        /// <summary>
+        /// CheckBox1 控件。
+        /// </summary>
+        /// <remarks>
+        /// 自动生成的字段。
+        /// 若要进行修改，请将字段声明从设计器文件移到代码隐藏文件。
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox CheckBox1;
+        
         /// <summary>
         /// b_login 控件。
         /// </summary>

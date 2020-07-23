@@ -66,6 +66,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="jaylosy.css" />
     <Content Include="Login.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
