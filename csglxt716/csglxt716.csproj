@@ -85,6 +85,7 @@
     <Compile Include="Login.aspx.designer.cs">
       <DependentUpon>Login.aspx</DependentUpon>
     </Compile>
+    <Compile Include="MessageBox.cs" />
     <Compile Include="Model\CatagoryInfo.cs" />
     <Compile Include="Model\ProductInfo.cs" />
     <Compile Include="Model\StockInfo.cs" />

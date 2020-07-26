@@ -55,11 +55,11 @@ namespace csglxt716
                         Response.Cookies["RemembeMe"].Value = "0";
                     }
                 }
-                Response.Write(GlobalFunc.GetAlert(msg));
+                this.Show(msg);
             }
             catch (Exception ex)
             {
-                Response.Write(GlobalFunc.GetAlert(ex.Message));
+                this.Show(ex.Message);
             }
         }
     }
